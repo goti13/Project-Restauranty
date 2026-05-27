@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: restauranty-ingress
+  namespace: restauranty
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Uncomment below when TLS/HTTPS is configured
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: restauranty.yourdomain.com   # ← replace with your actual domain or remove for IP-based access
+      http:
+        paths:
+          # Auth microservice
+          - path: /api/auth(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3001
+
+          # Discounts microservice
+          - path: /api/discounts(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: discounts-service
+                port:
+                  number: 3002
+
+          # Items microservice
+          - path: /api/items(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: items-service
+                port:
+                  number: 3003
+
+          # React frontend (catch-all)
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
+  # ── TLS 
+   tls:
+     - hosts:
+         - gerald.az.ironlabs.online
+       secretName: restauranty-tls

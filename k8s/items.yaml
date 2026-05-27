@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: items
+  namespace: restauranty
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: items
+  template:
+    metadata:
+      labels:
+        app: items
+    spec:
+      containers:
+        - name: items
+          image: otigerald/restauranty-items:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: restauranty-secrets
+                  key: SECRET
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: restauranty-secrets
+                  key: MONGODB_URI
+            - name: CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: restauranty-secrets
+                  key: CLOUD_NAME
+            - name: CLOUD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: restauranty-secrets
+                  key: CLOUD_API_KEY
+            - name: CLOUD_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: restauranty-secrets
+                  key: CLOUD_API_SECRET
+          readinessProbe:
+            tcpSocket:
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 3003
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: items-service
+  namespace: restauranty
+spec:
+  selector:
+    app: items
+  ports:
+    - port: 3003
+      targetPort: 3003
+  type: ClusterIP

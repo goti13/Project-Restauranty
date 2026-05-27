@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: restauranty-ingress
+  namespace: restauranty
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - gerald.az.ironlabs.online
+      secretName: restauranty-tls
+  rules:
+    - host: gerald.az.ironlabs.online
+      http:
+        paths:
+          # Auth microservice
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3001
+
+          # Discounts microservice
+          - path: /api/discounts
+            pathType: Prefix
+            backend:
+              service:
+                name: discounts-service
+                port:
+                  number: 3002
+
+          # Items microservice
+          - path: /api/items
+            pathType: Prefix
+            backend:
+              service:
+                name: items-service
+                port:
+                  number: 3003
+
+          # React frontend (catch-all)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

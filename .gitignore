@@ -1,0 +1,19 @@
+# ─── Secrets (never commit) ───────────────────────────────────────────────────
+secrets.env
+backend/auth/.env
+backend/discounts/.env
+backend/items/.env
+client/.env
+
+# ─── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log
+
+# ─── React build output ───────────────────────────────────────────────────────
+client/build/
+
+# ─── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.override.yml

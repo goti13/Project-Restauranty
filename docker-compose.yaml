@@ -1,0 +1,131 @@
+
+# ─── Restauranty – Local Docker Compose ──────────────────────────────────────
+# Brings up: MongoDB + Auth + Discounts + Items + React client + HAProxy
+# Access the app at http://localhost/
+#
+# Usage:
+#   docker compose up --build          # first run
+#   docker compose up -d               # detached
+#   docker compose down -v             # stop + remove volumes
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── MongoDB ────────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: restauranty-mongo
+    restart: unless-stopped
+    ports:
+      - "27020:27020"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - restauranty-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Auth Microservice (port 3001) ──────────────────────────────────────────
+  auth:
+    build:
+      context: ./backend/auth
+      dockerfile: Dockerfile
+    container_name: restauranty-auth
+    restart: unless-stopped
+    env_file:
+      - ./backend/auth/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/restauranty
+    ports:
+      - "3001:3001"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - restauranty-net
+
+  # ── Discounts Microservice (port 3002) ─────────────────────────────────────
+  discounts:
+    build:
+      context: ./backend/discounts
+      dockerfile: Dockerfile
+    container_name: restauranty-discounts
+    restart: unless-stopped
+    env_file:
+      - ./backend/discounts/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/restauranty
+    ports:
+      - "3002:3002"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - restauranty-net
+
+  # ── Items Microservice (port 3003) ─────────────────────────────────────────
+  items:
+    build:
+      context: ./backend/items
+      dockerfile: Dockerfile
+    container_name: restauranty-items
+    restart: unless-stopped
+    env_file:
+      - ./backend/items/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/restauranty
+    ports:
+      - "3003:3003"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - restauranty-net
+
+  # ── React Frontend (served by nginx on port 3000) ──────────────────────────
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        # HAProxy is the single entry point, so all API calls go via port 80
+        REACT_APP_SERVER_URL: http://localhost:80
+    container_name: restauranty-client
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - auth
+      - discounts
+      - items
+    networks:
+      - restauranty-net
+
+  # ── HAProxy (port 80 → routes to all services) ────────────────────────────
+  haproxy:
+    image: haproxy:2.9-alpine
+    container_name: restauranty-haproxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - auth
+      - discounts
+      - items
+      - client
+    networks:
+      - restauranty-net
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  mongo-data:
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  restauranty-net:
+    driver: bridge

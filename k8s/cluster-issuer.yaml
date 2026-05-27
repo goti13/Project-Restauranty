@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # Let's Encrypt production endpoint
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Your email — Let's Encrypt sends cert expiry warnings here
+    email: geraldoti85@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
