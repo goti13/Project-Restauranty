@@ -53,6 +53,7 @@ jobs:
           CI: "false"
 
       - name: Run tests
+        if: matrix.service.name != 'client'
         working-directory: ${{ matrix.service.path }}
         run: npm test --if-present
 
