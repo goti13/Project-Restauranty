@@ -50,6 +50,7 @@ jobs:
         run: npm run build
         env:
           REACT_APP_SERVER_URL: https://gerald.az.ironlabs.online
+          CI: "false"
 
       - name: Run tests
         working-directory: ${{ matrix.service.path }}
@@ -108,6 +109,7 @@ jobs:
           push: true
           build-args: |
             REACT_APP_SERVER_URL=https://gerald.az.ironlabs.online
+            CI=false
           tags: |
             ${{ env.DOCKER_USER }}/restauranty-client:latest
             ${{ env.DOCKER_USER }}/restauranty-client:${{ env.IMAGE_TAG }}
